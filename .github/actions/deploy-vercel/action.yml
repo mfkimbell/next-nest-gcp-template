@@ -1,0 +1,54 @@
+name: Deploy to Vercel
+
+description: 'Deploys Services to Vercel.'
+
+inputs:
+  app-name:
+    description: 'The name of the app'
+    required: true
+    type: string
+  vercel-token:
+    description: 'The Vercel token'
+    required: true
+    type: string
+  api-url:
+    description: 'The API URL'
+    required: true
+    type: string
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Install Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '23'
+
+    - name: Cache npm dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-npm-vercel-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-npm-vercel
+
+    - name: Install dependencies
+      run: |
+        cd ${{ inputs.app-name }}
+        npm install
+      shell: bash
+
+    - name: Build project
+      run: |
+        cd ${{ inputs.app-name }}
+        npm run build
+      shell: bash 
+
+    - name: Deploy to Vercel
+      run: |
+        cd ${{ inputs.app-name }}
+        npx vercel --prod --token ${{ inputs.vercel-token }} --yes --env API_BASE_URL=${{ inputs.api-url }}
+      shell: bash 
